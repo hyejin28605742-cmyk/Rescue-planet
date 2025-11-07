@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BioSynth Planet — Prototype</title>
+<style>
+  :root{
+    --bg:#0b1220; --card:#0f1724; --accent:#3bd985; --muted:#99a3b3;
+    --glass: rgba(255,255,255,0.04);
+    font-family: "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  }
+  html,body{height:100%;margin:0;background:
+    radial-gradient(1200px 600px at 10% 10%, rgba(59,217,133,0.06), transparent),
+    linear-gradient(180deg,#061018 0%, #081426 50%, #07101a 100%);
+    color:#e6f0f0;}
+  .app{max-width:1100px;margin:18px auto;padding:18px;}
+  header{display:flex;gap:12px;align-items:center;}
+  .logo{display:flex;gap:10px;align-items:center}
+  .logo .icon{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,#1f7a5a,#3bd985);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;color:#052012;box-shadow:0 6px 18px rgba(59,217,133,0.08)}
+  h1{margin:0;font-size:18px}
+  p.lead{margin:4px 0 0;color:var(--muted);font-size:13px}
+  main{display:grid;grid-template-columns:1fr 380px;gap:14px;margin-top:16px}
+  /* Left big panel */
+  .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent); border-radius:12px;padding:14px;box-shadow:0 8px 30px rgba(2,6,12,0.6);border:1px solid rgba(255,255,255,0.03)}
+  .planet-view{height:360px;border-radius:10px;background:
+    linear-gradient(180deg,#0b2030,#052032);display:flex;align-items:center;justify-content:center;flex-direction:column;position:relative;overflow:hidden}
+  .planet{width:260px;height:260px;border-radius:50%;background:
+    radial-gradient(circle at 30% 30%, #236b4e 0%, #1a4a38 40%, #0f2a25 100%);
+    box-shadow: inset 0 18px 50px rgba(0,0,0,0.6), 0 8px 28px rgba(0,0,0,0.6);
+    display:flex;align-items:center;justify-content:center;color:#dfffe9;font-weight:700;font-size:20px}
+  .hud{position:absolute;left:12px;top:12px;background:var(--glass);padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);font-size:13px;}
+  .controls{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  button.btn{background:linear-gradient(180deg,#1d6f49,#1b5d3f);color:#eaffef;padding:8px 12px;border-radius:10px;border:0;cursor:pointer;font-weight:600;box-shadow:0 6px 18px rgba(7,40,20,0.4)}
+  button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px 12px;border-radius:10px}
+  .small{padding:6px 10px;font-size:13px}
+  /* Right sidebar */
+  aside{display:flex;flex-direction:column;gap:12px}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.018), transparent);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02)}
+  .stat{display:flex;justify-content:space-between;align-items:center;margin:6px 0}
+  .stat strong{font-size:18px}
+  .map-mini{height:160px;border-radius:8px;background:linear-gradient(180deg,#0b2a20,#05221b);display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:6px}
+  .tile{background:linear-gradient(180deg,#0a1512,#05110d);border-radius:6px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
+  .tile.clean{background:linear-gradient(180deg,#195b3f,#2da874);color:#032b12;box-shadow:0 6px 14px rgba(45,168,116,0.06)}
+  .shop-list{display:flex;flex-direction:column;gap:8px}
+  .shop-item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02)}
+  .badge{background:rgba(255,255,255,0.03);padding:4px 6px;border-radius:6px;font-size:12px;color:var(--muted)}
+  footer{margin-top:14px;color:var(--muted);font-size:13px;text-align:center}
+  /* responsive */
+  @media (max-width:900px){main{grid-template-columns:1fr;}}
+  input[type=file]{display:none}
+  .input-row{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .log{height:120px;overflow:auto;background:rgba(0,0,0,0.15);padding:8px;border-radius:8px;color:var(--muted);font-size:13px}
+  .animal-list{display:flex;gap:8px;flex-wrap:wrap}
+  .animal{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:6px 8px;border-radius:10px;font-weight:600}
+  .locked{opacity:0.35}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">
+      <div class="icon">BS</div>
+      <div>
+        <h1>BioSynth Planet — Rebirth of Gaia (Prototype)</h1>
+        <p class="lead">오염된 행성을 정화하자 — 현실 인증으로 게임 포인트 획득, 식물·동물 이주까지!</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- LEFT: Planet / Lab -->
+    <section class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <strong id="playerName">연구원</strong>
+          <div style="font-size:13px;color:var(--muted)">연구소 레벨 <span id="labLevel">1</span></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="badge">Eco Energy: <strong id="energy">0</strong></div>
+          <div class="badge">Eco Coin: <strong id="coin">0</strong></div>
+        </div>
+      </div>
+
+      <div class="planet-view" style="margin-top:12px">
+        <div class="hud">
+          <div>정화 면적: <strong id="cleanArea">0</strong> tiles</div>
+          <div>환경 점수: <strong id="ecoIndex">0</strong></div>
+        </div>
+        <div class="planet" id="planetCenter">GAIA</div>
+        <div class="controls" style="margin-top:12px">
+          <button class="btn" id="startMission">Start Mission</button>
+          <button class="ghost small" id="openLab">연구소 이동</button>
+          <button class="ghost small" id="openMap">지도 보기</button>
+          <button class="ghost small" id="openShop">상점 보기</button>
+          <button class="ghost small" id="resetBtn">초기화</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="card">
+          <strong>인증 업로드 (현실 활동)</strong>
+          <p style="color:var(--muted);font-size:13px;margin:6px 0">사진을 업로드해서 활동을 인증해. 더 진짜처럼 보이면(=이미지 파일 있으면) 포인트가 더 많이 줘.</p>
+          <div class="input-row">
+            <label class="btn small" for="fileInput">사진 선택</label>
+            <input id="fileInput" type="file" accept="image/*" />
+            <select id="actionSelect" style="flex:1;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted)">
+              <option value="recycle">분리배출 (라벨 제거/압축)</option>
+              <option value="transit">대중교통 이용</option>
+              <option value="diyfilter">DIY 정화 필터 제작</option>
+              <option value="enzyme">효소 기반 분해 실험</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn small" id="submitProof">인증 제출</button>
+            <button class="ghost small" id="fakeProof">간단 인증 (더 적음)</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <strong>연구소</strong>
+          <p style="color:var(--muted);font-size:13px;margin:6px 0">장비 업그레이드로 정화 효율과 자동 수익 증가.</p>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div style="flex:1">
+              <div class="stat"><span>촉매 연구실 레벨</span><strong id="catalystLevel">1</strong></div>
+              <div class="stat"><span>효소 공정 레벨</span><strong id="enzymeLevel">1</strong></div>
+            </div>
+            <div>
+              <button class="btn small" id="upgradeCatalyst">촉매 업그레이드 (200E)</button><br/><br/>
+              <button class="btn small" id="upgradeEnzyme">효소 업그레이드 (300E)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px" class="card">
+        <strong>행동 로그</strong>
+        <div class="log" id="log"></div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT: Sidebar -->
+    <aside>
+      <div class="card">
+        <strong>미니 지도</strong>
+        <div class="map-mini" id="miniMap"></div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button class="ghost small" id="cleanTile">수동 정화 (50E)</button>
+          <button class="ghost small" id="plantTile">식물 심기 (30E)</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <strong>상점</strong>
+        <div class="shop-list" id="shopList">
+          <!-- items injected by JS -->
+        </div>
+        <div style="margin-top:8px;font-size:13px;color:var(--muted)">유료 패키지는 시연용으로 Eco Coin 결제로 처리됨.</div>
+      </div>
+
+      <div class="card">
+        <strong>동물 보급소</strong>
+        <p style="color:var(--muted);font-size:13px;margin:6px 0">환경 점수로 동물 그룹이 해금. 이주시엔 Eco Energy 소모.</p>
+        <div class="animal-list" id="animalList"></div>
+      </div>
+
+      <div class="card">
+        <strong>통계</strong>
+        <div class="stat"><span>총 인증 횟수</span><strong id="proofCount">0</strong></div>
+        <div class="stat"><span>자동 수익/분</span><strong id="autoIncome">0</strong></div>
+      </div>
+    </aside>
+
+  </main>
+
+  <footer>프로토타입 — 로컬 저장(LocalStorage) 지원 — 실제 결제/서버 없음</footer>
+</div>
+
+<script>
+/*
+  BioSynth Planet — Prototype JS
+  - 로컬에서 바로 작동 (localStorage로 저장)
+  - 핵심 변수: energy (Eco Energy), coin (Eco Coin), cleanArea, ecoIndex
+  - 인증 제출(사진 유무에 따라 보상), 간단인증(소액 보상)
+  - 자동 수익: 정화 면적(cleanArea)에 비례하여 coin이 매 n초마다 증가
+  - 미니 지도: 5x4 타일(20 tiles). 타일 상태: dirty / clean / planted / water
+  - 동물 해금: ecoIndex 기준으로 unlock. 이주하려면 energy 사용.
+  - shop: 일부는 coin(유료 패키지 시뮬)으로 구매 가능.
+*/
+
+// ---------------------- 기본 데이터 ----------------------
+const state = {
+  playerName: '연구원',
+  energy: 0, // Eco Energy (활동으로 획득)
+  coin: 0,   // Eco Coin (자동 수익)
+  cleanArea: 0,
+  ecoIndex: 0,
+  proofCount: 0,
+  catalystLevel: 1,
+  enzymeLevel: 1,
+  labLevel: 1,
+  autoIncomePerMin: 0,
+  mapTiles: [], // 20 tiles
+  animalsOwned: [],
+  lastTick: Date.now()
+};
+
+// init tiles 5 cols x 4 rows = 20
+const COLS = 5, ROWS = 4;
+for(let i=0;i<COLS*ROWS;i++){
+  state.mapTiles.push({id:i, status:'dirty'}); // dirty | clean | planted | water
+}
+
+// shops (some items cost Eco Energy, some cost Eco Coin)
+const SHOP_ITEMS = [
+  {id:'oxygen1', name:'산소발생기 I', desc:'작은 산소발생기. 자동 income 증가', costType:'energy', cost:500, effect:{autoIncome:1}},
+  {id:'filter', name:'광촉매 필터', desc:'정화 효율 +1', costType:'energy', cost:300, effect:{cleanBoost:1}},
+  {id:'treePack', name:'나무 묘목 10개', desc:'즉시 식생 면적 증가', costType:'coin', cost:100, effect:{plantCount:10}},
+  {id:'rareAnimalPack', name:'멸종위기 이주팩', desc:'희귀동물 1마리 즉시 이주(시뮬)', costType:'coin', cost:1000, effect:{grantAnimal:'endangered'}}
+];
+
+// animals unlock by ecoIndex thresholds
+const ANIMAL_POOL = [
+  {id:'rabbit', name:'토끼', unlock:200, costEnergy:50},
+  {id:'deer', name:'사슴', unlock:500, costEnergy:120},
+  {id:'penguin', name:'펭귄', unlock:2000, costEnergy:800},
+  {id:'whale', name:'고래', unlock:10000, costEnergy:3000},
+  {id:'rare', name:'멸종 위기종', unlock:20000, costEnergy:10000}
+];
+
+// ---------------------- 유틸 & 렌더 ----------------------
+const $ = sel => document.querySelector(sel);
+const $$ = sel => document.querySelectorAll(sel);
+
+function saveState(){
+  localStorage.setItem('biosynth_state', JSON.stringify(state));
+}
+function loadState(){
+  const s = localStorage.getItem('biosynth_state');
+  if(s) {
+    try {
+      const parsed = JSON.parse(s);
+      Object.assign(state, parsed);
+      // ensure mapTiles length
+      if(!state.mapTiles || state.mapTiles.length !== COLS*ROWS){
+        state.mapTiles = [];
+        for(let i=0;i<COLS*ROWS;i++) state.mapTiles.push({id:i, status:'dirty'});
+      }
+    }catch(e){ console.error(e); }
+  }
+}
+function format(n){ return Math.floor(n); }
+
+function renderAll(){
+  $('#playerName').textContent = state.playerName;
+  $('#energy').textContent = format(state.energy);
+  $('#coin').textContent = format(state.coin);
+  $('#cleanArea').textContent = state.cleanArea;
+  $('#ecoIndex').textContent = state.ecoIndex;
+  $('#labLevel').textContent = state.labLevel;
+  $('#catalystLevel').textContent = state.catalystLevel;
+  $('#enzymeLevel').textContent = state.enzymeLevel;
+  $('#proofCount').textContent = state.proofCount;
+  $('#autoIncome').textContent = state.autoIncomePerMin;
+  // map
+  const mini = $('#miniMap'); mini.innerHTML = '';
+  state.mapTiles.forEach(t=>{
+    const d = document.createElement('div');
+    d.className = 'tile' + (t.status!=='dirty' ? ' clean' : '');
+    d.textContent = t.status==='dirty' ? '오염' : (t.status==='clean' ? '정화' : (t.status==='planted' ? '초목' : '물길'));
+    d.title = `Tile ${t.id} — ${t.status}`;
+    d.onclick = ()=>{ selectTile(t.id); };
+    mini.appendChild(d);
+  });
+  // shop
+  const shop = $('#shopList'); shop.innerHTML='';
+  SHOP_ITEMS.forEach(it=>{
+    const div = document.createElement('div'); div.className='shop-item';
+    const left = document.createElement('div');
+    left.innerHTML = `<div style="font-weight:700">${it.name}</div><div style="font-size:12px;color:var(--muted)">${it.desc}</div>`;
+    const right = document.createElement('div');
+    const cost = document.createElement('div'); cost.className='badge'; cost.textContent = `${it.cost} ${it.costType==='energy'?'E':'C'}`;
+    const buy = document.createElement('button'); buy.className='btn small'; buy.textContent='구매';
+    buy.onclick = ()=>{ buyItem(it.id); };
+    right.appendChild(cost); right.appendChild(buy);
+    div.appendChild(left); div.appendChild(right);
+    shop.appendChild(div);
+  });
+  // animals
+  const al = $('#animalList'); al.innerHTML='';
+  ANIMAL_POOL.forEach(a=>{
+    const owned = state.animalsOwned.includes(a.id);
+    const unlocked = state.ecoIndex >= a.unlock;
+    const div = document.createElement('div'); div.className='animal' + (owned?'' : (unlocked? '' : ' locked'));
+    div.innerHTML = `<div style="font-size:13px">${a.name}</div><div style="font-size:11px;color:var(--muted)">${unlocked? (owned? '이주 완료':'이주 가능') : '미해금'}</div>`;
+    div.onclick = ()=>{
+      if(!unlocked){ log(`환경 점수가 ${a.unlock} 필요합니다.`); return; }
+      if(owned){ log(`${a.name}는 이미 이주했습니다.`); return; }
+      // attempt migration: consume energy
+      if(state.energy < a.costEnergy){ log(`이주에 ${a.costEnergy} E 필요 (현재 ${state.energy}).`); return; }
+      state.energy -= a.costEnergy;
+      state.animalsOwned.push(a.id);
+      log(`${a.name} 이주 성공! 환경 점수는 변동 없음.`);
+      saveState(); renderAll();
+    };
+    al.appendChild(div);
+  });
+  saveState();
+}
+
+// ---------------------- 행위들 ----------------------
+function log(txt){
+  const l = $('#log');
+  const time = new Date().toLocaleTimeString();
+  l.innerHTML = `<div style="margin-bottom:6px"><strong style="color:var(--accent)">${time}</strong> — ${txt}</div>` + l.innerHTML;
+}
+
+// 인증 제출 (파일 유무로 보상 차등)
+$('#submitProof').addEventListener('click', ()=>{
+  const fileInput = $('#fileInput');
+  const action = $('#actionSelect').value;
+  // reward logic
+  let base = 0;
+  if(action==='recycle') base=100;
+  if(action==='transit') base=150;
+  if(action==='diyfilter') base=400;
+  if(action==='enzyme') base=700;
+  // file present?
+  let bonus = fileInput.files && fileInput.files.length>0 ? 1.6 : 1.0;
+  const energyGain = Math.floor(base * bonus + Math.random()*50);
+  state.energy += energyGain;
+  state.proofCount += 1;
+  // small ecoIndex increase
+  state.ecoIndex += Math.floor(base/2);
+  log(`인증 제출 완료: ${energyGain} E 획득 (파일 ${fileInput.files.length>0? '첨부':'미첨부'}).`);
+  // give big chance to clean a tile
+  if(Math.random() < 0.7 || (fileInput.files && fileInput.files.length>0)){
+    // find a dirty tile, clean it
+    cleanRandomTile(1);
+  }
+  renderAll();
+});
+
+// 간단 인증 (덜 효율적)
+$('#fakeProof').addEventListener('click', ()=>{
+  const action = $('#actionSelect').value;
+  let base = 0; if(action==='recycle') base=40; if(action==='transit') base=60; if(action==='diyfilter') base=120; if(action==='enzyme') base=200;
+  const gain = Math.floor(base + Math.random()*20);
+  state.energy += gain;
+  state.proofCount += 1;
+  state.ecoIndex += Math.floor(base/4);
+  log(`간단 인증: ${gain} E 획득 (실제 사진 없이 간편 제출).`);
+  renderAll();
+});
+
+// 수동 정화
+$('#cleanTile').addEventListener('click', ()=>{
+  if(state.energy < 50){ log('정화하려면 50 E 필요.'); return; }
+  state.energy -= 50;
+  cleanRandomTile(1);
+  log('수동 정화 실행: 1 타일 정화.');
+  renderAll();
+});
+$('#plantTile').addEventListener('click', ()=>{
+  if(state.energy < 30){ log('식물 심기 30 E 필요.'); return; }
+  state.energy -= 30;
+  cleanRandomTile(1, 'planted');
+  state.ecoIndex += 10;
+  log('식물 심기: 1 타일에 초목 심음.');
+  renderAll();
+});
+
+// tile selection (for debugging / manual)
+function selectTile(id){
+  const t = state.mapTiles[id];
+  if(!t) return;
+  if(t.status==='dirty'){
+    if(state.energy>=80){
+      state.energy -= 80;
+      t.status='clean';
+      state.cleanArea += 1;
+      state.ecoIndex += 20;
+      log(`직접 정화: 타일 ${id} 정화됨. (-80E)`);
+    } else {
+      log('직접 정화하려면 80 E 필요.');
+    }
+  } else if(t.status==='clean'){
+    log(`타일 ${id}는 이미 정화됨.`);
+  }
+  renderAll();
+}
+
+// 랜덤 얼룩 제거/심기
+function cleanRandomTile(count=1, forcedStatus='clean'){
+  let cleaned = 0;
+  for(let i=0;i<state.mapTiles.length && cleaned<count;i++){
+    const idx = Math.floor(Math.random()*state.mapTiles.length);
+    const t = state.mapTiles[idx];
+    if(t.status==='dirty'){
+      t.status = forcedStatus || 'clean';
+      state.cleanArea += 1;
+      // ecoIndex increases based on type + equipment
+      let inc = (forcedStatus==='planted') ? 40 : 25;
+      // catalyst/enzyme boost
+      inc += (state.catalystLevel-1)*5 + (state.enzymeLevel-1)*7;
+      state.ecoIndex += inc;
+      cleaned++;
+    }
+  }
+  if(cleaned>0){
+    // increase auto income per min: simple function
+    state.autoIncomePerMin = Math.max(1, Math.floor(state.cleanArea / 3));
+  }
+  renderAll();
+}
+
+// shop purchase
+function buyItem(id){
+  const it = SHOP_ITEMS.find(s=>s.id===id);
+  if(!it) return;
+  if(it.costType==='energy'){
+    if(state.energy < it.cost){ log('E가 부족합니다.'); return; }
+    state.energy -= it.cost;
+  } else {
+    if(state.coin < it.cost){ log('Coin이 부족합니다.'); return; }
+    state.coin -= it.cost;
+  }
+  // apply effect
+  if(it.effect.autoIncome) state.autoIncomePerMin += it.effect.autoIncome;
+  if(it.effect.cleanBoost) { state.catalystLevel += 1; log('촉매 연구 효율 상승!'); }
+  if(it.effect.plantCount){
+    for(let i=0;i<it.effect.plantCount;i++) cleanRandomTile(1,'planted');
+  }
+  if(it.effect.grantAnimal){
+    // grant rare animal
+    state.animalsOwned.push('rare');
+    log('멸종 위기종 이주: 특별 보상');
+  }
+  log(`${it.name} 구매 완료.`);
+  renderAll();
+}
+
+// upgrades
+$('#upgradeCatalyst').addEventListener('click', ()=>{
+  if(state.energy < 200){ log('200 E 필요'); return; }
+  state.energy -= 200; state.catalystLevel += 1; state.labLevel = Math.max(state.labLevel, Math.floor((state.catalystLevel + state.enzymeLevel)/2));
+  log('촉매 연구실 업그레이드 완료! 정화 효율 증가.');
+  renderAll();
+});
+$('#upgradeEnzyme').addEventListener('click', ()=>{
+  if(state.energy < 300){ log('300 E 필요'); return; }
+  state.energy -= 300; state.enzymeLevel += 1; state.labLevel = Math.max(state.labLevel, Math.floor((state.catalystLevel + state.enzymeLevel)/2));
+  log('효소 공정 업그레이드 완료! 생물정화 효율 증가.');
+  renderAll();
+});
+
+// shop open
+$('#openShop').addEventListener('click', ()=>{ document.querySelector('aside').scrollIntoView({behavior:'smooth'}) });
+
+// reset
+$('#resetBtn').addEventListener('click', ()=>{
+  if(!confirm('프로토타입 상태를 초기화할래? (저장 삭제)')) return;
+  localStorage.removeItem('biosynth_state'); location.reload();
+});
+
+// start mission (small intro)
+$('#startMission').addEventListener('click', ()=>{
+  log('임무 시작: 오염된 가이아 복원 프로젝트를 시작합니다.');
+});
+
+// open lab/map
+$('#openLab').addEventListener('click', ()=>{ log('연구소 창을 열었어. 장비 업그레이드로 더 강해질 수 있어.'); });
+$('#openMap').addEventListener('click', ()=>{ log('지도를 확인하고 정화할 타일을 선택해보자.'); });
+
+// file input preview (not uploaded anywhere, checks existence)
+$('#fileInput').addEventListener('change', (e)=>{
+  if(e.target.files && e.target.files.length>0){
+    log('사진 선택됨: ' + e.target.files[0].name);
+  }
+});
+
+// ---------------------- 자동 수익 (매 초) ----------------------
+function tick(){
+  const now = Date.now();
+  const elapsed = now - state.lastTick;
+  if(elapsed >= 1000){ // 1초 tick
+    // coin generation: autoIncomePerMin per minute -> per sec
+    const perSec = state.autoIncomePerMin / 60;
+    state.coin += perSec;
+    // tiny passive ecoIndex increase if many tiles cleaned
+    if(state.cleanArea > 0 && Math.random() < 0.02) state.ecoIndex += 1;
+    state.lastTick = now;
+    // occasionally small events: rain -> +ecoIndex
+    if(Math.random() < 0.002) { state.ecoIndex += 15; log('비가 내려 일부 지역이 자연정화 되었다 (+15 EcoIndex).'); }
+    renderAll();
+  }
+  requestAnimationFrame(tick);
+}
+
+// ---------------------- 초기화 로드 & 시작 ----------------------
+loadState();
+renderAll();
+tick();
+log('프로토타입 로드 완료. 사진 업로드로 인증하고 정화를 시작해!');
+
+</script>
