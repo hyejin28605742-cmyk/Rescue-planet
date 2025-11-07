@@ -3,113 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BioSynth Planet</title>
+<title>BioSynth Planet v3</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
-  body {
-    margin: 0;
-    overflow: hidden;
-    background: radial-gradient(ellipse at center, #000010 0%, #000 100%);
-    font-family: 'Jua', sans-serif;
-    color: #fff;
-  }
+  body, html { margin:0; padding:0; overflow:hidden; font-family:'Jua',sans-serif; background:#000; }
+  
+  canvas { display:block; }
 
-  canvas {
-    display: block;
-  }
-
-  /* 상단 포인트 & 환경 점수 */
   .hud {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    background: rgba(0,0,0,0.4);
-    border: 2px solid #00f5a0;
-    border-radius: 10px;
-    padding: 10px 20px;
-    text-align: right;
-    font-size: 20px;
+    position:absolute; top:15px; right:20px;
+    background: rgba(0,0,0,0.4); border:2px solid #00f5a0; border-radius:10px;
+    padding:10px 20px; text-align:right; font-size:20px; z-index:10;
   }
 
-  /* 하단 버튼 */
   .bottom-bar {
-    position: absolute;
-    bottom: 15px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 20px;
+    position:absolute; bottom:15px; left:50%; transform:translateX(-50%);
+    display:flex; gap:20px; z-index:10;
   }
 
-  .btn {
-    background: #00f5a0;
-    border: none;
-    border-radius: 20px;
-    padding: 10px 25px;
-    font-size: 18px;
-    color: #000;
-    cursor: pointer;
-    transition: 0.3s;
-  }
+  .btn { background:#00f5a0; border:none; border-radius:20px; padding:10px 25px; font-size:18px; color:#000; cursor:pointer; transition:0.3s; }
+  .btn:hover { background:#a1ffd1; }
 
-  .btn:hover {
-    background: #a1ffd1;
-  }
-
-  /* 상점 & 인증 창 */
   .window {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 400px;
-    height: 450px;
-    background: rgba(20,20,30,0.9);
-    border: 3px solid #00f5a0;
-    border-radius: 15px;
-    transform: translate(-50%, -50%);
-    display: none;
-    flex-direction: column;
-    padding: 15px;
-    overflow-y: auto;
+    position:absolute; top:50%; left:50%; width:400px; height:450px;
+    background: rgba(20,20,30,0.95); border:3px solid #00f5a0; border-radius:15px;
+    transform:translate(-50%, -50%); display:none; flex-direction:column; padding:15px; overflow-y:auto; z-index:20;
   }
 
-  .window h2 {
-    text-align: center;
-    color: #00f5a0;
-  }
+  .window h2 { text-align:center; color:#00f5a0; }
+  .item { background: rgba(255,255,255,0.1); margin:5px 0; padding:10px; border-radius:10px; cursor:pointer; }
+  .item:hover { background: rgba(0,245,160,0.3); }
+  .close-btn { background:#ff77aa; color:#fff; border:none; border-radius:15px; padding:5px 10px; cursor:pointer; align-self:flex-end; }
 
-  .item {
-    background: rgba(255,255,255,0.1);
-    margin: 10px;
-    border-radius: 10px;
-    padding: 10px;
-  }
+  input[type="file"], select { background:#222; border:1px solid #00f5a0; color:white; border-radius:5px; padding:5px; }
 
-  .close-btn {
-    background: #ff77aa;
-    color: #fff;
-    border: none;
-    border-radius: 15px;
-    padding: 5px 10px;
-    cursor: pointer;
-    align-self: flex-end;
-  }
-
-  input[type="file"], select {
-    background: #222;
-    border: 1px solid #00f5a0;
-    color: white;
-    border-radius: 5px;
-    padding: 5px;
-  }
-
-  #certList .record {
-    background: rgba(255,255,255,0.1);
-    margin: 5px 0;
-    padding: 8px;
-    border-radius: 5px;
-  }
-
+  #certList .record { background: rgba(255,255,255,0.1); margin:5px 0; padding:8px; border-radius:5px; }
 </style>
 </head>
 <body>
@@ -128,11 +56,15 @@
 <div id="shopWindow" class="window">
   <button class="close-btn" onclick="closeShop()">닫기</button>
   <h2>🌿 상점</h2>
-  <div class="item">🧪 정화 장비 - 300P</div>
-  <div class="item">🌳 식물 꾸미기 - 200P</div>
-  <div class="item">🐰 동물 이주 (일반) - 500P</div>
-  <div class="item">🦋 동물 이주 (희귀) - 1500P</div>
-  <div class="item">🌟 멸종위기종 패키지 (유료)</div>
+  <label>카테고리:
+    <select id="shopCategory" onchange="updateShopItems()">
+      <option value="plant">식물 꾸미기</option>
+      <option value="animal">동물 이주</option>
+      <option value="tool">정화 장비</option>
+      <option value="package">유료 패키지</option>
+    </select>
+  </label>
+  <div id="shopItems"></div>
 </div>
 
 <!-- 인증 창 -->
@@ -158,10 +90,10 @@
   <div id="certList"></div>
 </div>
 
-<!-- three.js 행성 -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.156.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.156.0/examples/js/controls/OrbitControls.js"></script>
 <script>
+// ================== 3D 행성 ===================
 let scene = new THREE.Scene();
 let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 let renderer = new THREE.WebGLRenderer({antialias:true});
@@ -169,20 +101,20 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // 조명
-let ambient = new THREE.AmbientLight(0xffffff, 0.5);
-scene.add(ambient);
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 let point = new THREE.PointLight(0xffffff, 1);
 point.position.set(5,5,5);
 scene.add(point);
 
-// 행성 (더러운 텍스처 느낌)
-let texture = new THREE.TextureLoader().load('https://i.imgur.com/y8WchLZ.jpg');
-let geometry = new THREE.SphereGeometry(3, 32, 32);
-let material = new THREE.MeshStandardMaterial({map: texture});
-let planet = new THREE.Mesh(geometry, material);
+// 행성
+let texLoader = new THREE.TextureLoader();
+let texture = texLoader.load('https://threejsfundamentals.org/threejs/resources/images/planets/earth_atmos_2048.jpg'); // 안정 텍스처
+let planetGeo = new THREE.SphereGeometry(3, 64, 64);
+let planetMat = new THREE.MeshStandardMaterial({map: texture});
+let planet = new THREE.Mesh(planetGeo, planetMat);
 scene.add(planet);
 
-// 연구소 (귀여운 큐브로 표현)
+// 연구소
 let labGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
 let labMat = new THREE.MeshStandardMaterial({color: 0x00f5a0});
 let lab = new THREE.Mesh(labGeo, labMat);
@@ -199,15 +131,59 @@ function animate() {
 }
 animate();
 
-// ✅ 상점 창 제어
-function openShop(){ document.getElementById("shopWindow").style.display="flex"; }
+// ================== 상점 ===================
+const shopItemsDiv = document.getElementById("shopItems");
+
+const shopData = {
+  plant: [
+    {name:"🌷 튤립", price:150},
+    {name:"🌳 나무", price:200},
+    {name:"🌻 해바라기", price:250}
+  ],
+  animal: [
+    {name:"🐰 토끼 (일반)", price:500},
+    {name:"🦊 여우 (일반)", price:600},
+    {name:"🦄 유니콘 (희귀)", price:1500},
+    {name:"🦋 나비 (희귀)", price:1200}
+  ],
+  tool: [
+    {name:"🧪 정화 장비 A", price:300},
+    {name:"🧪 정화 장비 B", price:450}
+  ],
+  package: [
+    {name:"🌟 멸종위기종 패키지", price:"유료"}
+  ]
+};
+
+function updateShopItems(){
+  const cat = document.getElementById("shopCategory").value;
+  shopItemsDiv.innerHTML = "";
+  shopData[cat].forEach(item=>{
+    let div = document.createElement("div");
+    div.className = "item";
+    div.textContent = `${item.name} - ${item.price}P`;
+    div.onclick = ()=>{
+      if(item.price==="유료"){
+        alert("유료 패키지는 결제가 필요합니다!");
+      } else {
+        let points = parseInt(document.getElementById("points").textContent);
+        if(points >= item.price){
+          document.getElementById("points").textContent = points-item.price;
+          alert(item.name+" 구매 완료!");
+        } else { alert("포인트가 부족합니다!"); }
+      }
+    }
+    shopItemsDiv.appendChild(div);
+  });
+}
+
+function openShop(){ document.getElementById("shopWindow").style.display="flex"; updateShopItems(); }
 function closeShop(){ document.getElementById("shopWindow").style.display="none"; }
 
-// ✅ 인증 창 제어
+// ================== 인증 ===================
 function openCert(){ document.getElementById("certWindow").style.display="flex"; }
 function closeCert(){ document.getElementById("certWindow").style.display="none"; }
 
-// ✅ 인증 시스템
 const form = document.getElementById("certForm");
 const list = document.getElementById("certList");
 form.addEventListener("submit", (e)=>{
@@ -223,7 +199,10 @@ form.addEventListener("submit", (e)=>{
   record.className = "record";
   record.textContent = `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()} | ${cat}`;
   list.prepend(record);
-  alert("인증 완료!");
+  // 포인트 추가
+  let points = parseInt(document.getElementById("points").textContent);
+  document.getElementById("points").textContent = points+100; // 인증 100P
+  alert("인증 완료! +100P 획득");
   form.reset();
 });
 </script>
